@@ -8,28 +8,34 @@ import (
 	"syscall"
 )
 
-type Motion struct {
-	motionMap map[string]int
+const (
+	EmotionUnderThreshold = 20
+	EmotionOnThreshold    = 50
+	EmotionOverThreshold  = 70
+)
+
+type Emotion struct {
+	emotionMap map[string]int
 }
 
-type MotionManager struct {
-	motion        *Motion
+type EmotionManager struct {
+	emotion       *Emotion
 	self          *Self
-	motionCh      chan *Motion
+	emotionCh     chan *Emotion
 	modCmdCh      chan ModuleCommand
 	modCmdHndlMap ModuleCommandHandlerMap
-	//TODO: overMotionAction
+	//TODO: overEmotionAction
 }
 
 var (
-	initMotionCount = 0
+	initEmotionCount = 0
 )
 
-var defaultMotionMap = Motion{
-	motionMap: make(map[string]int),
+var defaultEmotionMap = Emotion{
+	emotionMap: make(map[string]int),
 }
 
-func loadMotionList(filename string) ([]string, error) {
+func loadEmotionList(filename string) ([]string, error) {
 	fmt.Println(filename)
 	var attrs []string
 	fd, err := os.OpenFile(filename, syscall.O_RDONLY, 0664)
@@ -53,56 +59,56 @@ func loadMotionList(filename string) ([]string, error) {
 	return attrs, nil
 }
 
-func (mm *MotionManager) Start() {
+func (mm *EmotionManager) Start() {
 	go mm.taskHandler()
 }
 
-func (mm *MotionManager) Send(v interface{}) {
+func (mm *EmotionManager) Send(v interface{}) {
 	switch val := v.(type) {
-	case *Motion:
-		mm.motionCh <- val
+	case *Emotion:
+		mm.emotionCh <- val
 	case ModuleCommand:
 		mm.modCmdCh <- val
 	}
 }
 
-func (mm *MotionManager) updateMotion(m *Motion) {
+func (mm *EmotionManager) updateEmotion(m *Emotion) {
 
 }
 
-func (mm *MotionManager) moduleCommandHandler(cmd ModuleCommand) {
+func (mm *EmotionManager) moduleCommandHandler(cmd ModuleCommand) {
 	mm.modCmdHndlMap[cmd]()
 }
 
-func (mm *MotionManager) taskHandler() {
+func (mm *EmotionManager) taskHandler() {
 	for {
 		select {
-		case motion := <-mm.motionCh:
-			mm.updateMotion(motion)
-			//fmt.Println(motion)
+		case emotion := <-mm.emotionCh:
+			mm.updateEmotion(emotion)
+			//fmt.Println(emotion)
 		case cmd := <-mm.modCmdCh:
 			mm.moduleCommandHandler(cmd)
-			fmt.Println("Motion", cmd)
+			fmt.Println("Emotion", cmd)
 		}
 	}
 }
 
-func NewMotionManager(s *Self) *MotionManager {
+func NewEmotionManager(s *Self) *EmotionManager {
 	cmdHndlMap := make(ModuleCommandHandlerMap, 0)
 
-	cmdHndlMap[MODCMD_START] = func() { fmt.Println("motion start") }
-	cmdHndlMap[MODCMD_SAVE] = func() { fmt.Println("motion save") }
+	cmdHndlMap[MODCMD_START] = func() { fmt.Println("emotion start") }
+	cmdHndlMap[MODCMD_SAVE] = func() { fmt.Println("emotion save") }
 
-	mm := &MotionManager{
-		motionCh:      make(chan *Motion, 10),
+	mm := &EmotionManager{
+		emotionCh:     make(chan *Emotion, 10),
 		modCmdCh:      make(chan ModuleCommand, 5),
 		modCmdHndlMap: cmdHndlMap,
 	}
 
-	motions, _ := loadMotionList(os.Getenv("GOPATH") + "/src/github.com/septemhill/humansim/simulator/motion.json")
+	emotions, _ := loadEmotionList(os.Getenv("GOPATH") + "/src/github.com/septemhill/humansim/simulator/emotion.json")
 
-	for _, motion := range motions {
-		defaultMotionMap.motionMap[motion] = 0
+	for _, emotion := range emotions {
+		defaultEmotionMap.emotionMap[emotion] = 0
 	}
 
 	return mm

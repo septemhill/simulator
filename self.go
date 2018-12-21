@@ -26,7 +26,7 @@ func NewSelf() *Self {
 		modules: make(map[string]Module),
 	}
 
-	s.modules[MODULE_MOTIONMGR] = NewMotionManager(s)
+	s.modules[MODULE_MOTIONMGR] = NewEmotionManager(s)
 	s.modules[MODULE_EGOMDR] = NewEgoManager(s)
 	s.modules[MODULE_COMMUMGR] = NewCommunicateManager(s)
 
