@@ -14,16 +14,19 @@ const (
 	EmotionOverThreshold  = 70
 )
 
-type Emotion struct {
+type EmotionalAction func()
+
+type EmotionB struct {
 	emotionMap map[string]int
 }
 
 type EmotionManager struct {
-	emotion       *Emotion
-	self          *Self
-	emotionCh     chan *Emotion
-	modCmdCh      chan ModuleCommand
-	modCmdHndlMap ModuleCommandHandlerMap
+	emotion        *EmotionB
+	self           *Self
+	emotionCh      chan *EmotionB
+	checkEmotionCh chan *EmotionB
+	modCmdCh       chan ModuleCommand
+	modCmdHndlMap  ModuleCommandHandlerMap
 	//TODO: overEmotionAction
 }
 
@@ -31,7 +34,7 @@ var (
 	initEmotionCount = 0
 )
 
-var defaultEmotionMap = Emotion{
+var defaultEmotionMap = EmotionB{
 	emotionMap: make(map[string]int),
 }
 
@@ -65,14 +68,14 @@ func (mm *EmotionManager) Start() {
 
 func (mm *EmotionManager) Send(v interface{}) {
 	switch val := v.(type) {
-	case *Emotion:
+	case *EmotionB:
 		mm.emotionCh <- val
 	case ModuleCommand:
 		mm.modCmdCh <- val
 	}
 }
 
-func (mm *EmotionManager) updateEmotion(m *Emotion) {
+func (mm *EmotionManager) updateEmotion(m *EmotionB) {
 
 }
 
@@ -88,7 +91,7 @@ func (mm *EmotionManager) taskHandler() {
 			//fmt.Println(emotion)
 		case cmd := <-mm.modCmdCh:
 			mm.moduleCommandHandler(cmd)
-			fmt.Println("Emotion", cmd)
+			fmt.Println("EmotionB", cmd)
 		}
 	}
 }
@@ -100,7 +103,7 @@ func NewEmotionManager(s *Self) *EmotionManager {
 	cmdHndlMap[MODCMD_SAVE] = func() { fmt.Println("emotion save") }
 
 	mm := &EmotionManager{
-		emotionCh:     make(chan *Emotion, 10),
+		emotionCh:     make(chan *EmotionB, 10),
 		modCmdCh:      make(chan ModuleCommand, 5),
 		modCmdHndlMap: cmdHndlMap,
 	}
